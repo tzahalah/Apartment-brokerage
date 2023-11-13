@@ -10,40 +10,49 @@ namespace Apartment_brokerage.Controllers
     [ApiController]
     public class CustomersController : ControllerBase
     {
-        private static int count = 0;
-        private static List<Customers> Customers = new List<Customers> { };
+        private readonly DataContext context;
+        public CustomersController(DataContext context1)
+        {
+            context = context1;
+        }
+
 
         // GET: api/<CustomersController>
         [HttpGet]
         public IEnumerable<Customers> Get()
         {
-            return Customers;
+            return context.Customers;
         }
 
         // GET api/<CustomersController>/5
         [HttpGet("{id}")]
-        public Customers Get(String id)
+        public ActionResult<Customers> Get(String id)
         {
-            var code = Customers.FindIndex(x => x.Id ==id);
-            return Customers[code];
+            var code = context.Customers.FindIndex(x => x.Id ==id);
+            if (code == -1)
+                return NotFound();
+            return context.Customers[code];
         }
 
         // POST api/<CustomersController>
         [HttpPost]
         public void Post([FromBody] Customers c)
         {
-            count++;
-            Customers.Add(c);
+            context.countC++;
+            context.Customers.Add(c);
         }
 
         // PUT api/<CustomersController>/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] Customers c)
+        public ActionResult Put(int id, [FromBody] Customers c)
         {
-            var code = Customers.FindIndex(x => x.Id == c.Id);
-            Customers[code].Lname = c.Lname;
-            Customers[code].Fname = c.Fname;
-            Customers[code].Phone = c.Phone;
+            var code = context.Customers.FindIndex(x => x.Id == c.Id);
+            if (code == -1)
+                return NotFound();
+            context.Customers[code].Lname = c.Lname;
+            context.Customers[code].Fname = c.Fname;
+            context.Customers[code].Phone = c.Phone;
+            return Ok();
 
         }
 
@@ -51,9 +60,9 @@ namespace Apartment_brokerage.Controllers
         [HttpDelete("{id}")]
         public void Delete(String id)
         {
-            count--;
-            var c = Customers.Find(x => x.Id == id);
-            Customers.Remove(c);
+            context.countC--;
+            var c = context.Customers.Find(x => x.Id == id);
+            context.Customers.Remove(c);
         }
     }
 }

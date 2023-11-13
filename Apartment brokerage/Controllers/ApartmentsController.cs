@@ -10,23 +10,29 @@ namespace Apartment_brokerage.Controllers
     [ApiController]
     public class ApartmentsController : ControllerBase
     {
-        private static int count = 0;
-        private static List<Apartments> Apartments = new List<Apartments> { };
+        private readonly DataContext context;
+        public ApartmentsController(DataContext context1)
+        {
+            context = context1;
+        }
 
-       
-            // GET: api/<ApartmentsController>
-            [HttpGet]
+
+
+        // GET: api/<ApartmentsController>
+        [HttpGet]
         public IEnumerable<Apartments> Get()
         {
-            return Apartments;
+            return context.Apartments;
         }
 
         // GET api/<ApartmentsController>/5
         [HttpGet("{id}")]
-        public Apartments Get(int Code)
+        public ActionResult<Apartments> Get(int Code)
         {
-            var c = Apartments.FindIndex(x => x.Code == Code);
-            return Apartments[c];
+            var c = context.Apartments.FindIndex(x => x.Code == Code);
+            if (c ==-1)
+                return NotFound();
+            return context.Apartments[c];
         }
 
         // POST api/<ApartmentsController>
@@ -34,28 +40,31 @@ namespace Apartment_brokerage.Controllers
         public void Post([FromBody] Apartments a)
         {
 
-            Apartments.Add(new Apartments { Code = count++, Rooms = a.Rooms, Meters = a.Meters, City = a.City, Street = a.Street, Num = a.Num }) ;
+            context.Apartments.Add(new Apartments { Code = context.countA++, Rooms = a.Rooms, Meters = a.Meters, City = a.City, Street = a.Street, Num = a.Num }) ;
         }
 
         // PUT api/<ApartmentsController>/5
         [HttpPut("{id}")]
-        public void Put(int Code, [FromBody] Apartments a)
+        public ActionResult Put(int Code, [FromBody] Apartments a)
         {
-            var c = Apartments.FindIndex(x => x.Code == Code);
-            Apartments[c].Rooms = a.Rooms;
-            Apartments[c].Meters = a.Meters;
-            Apartments[c].City = a.City;
-            Apartments[c].Street = a.Street;
-            Apartments[c].Num = a.Num;
+            var c = context.Apartments.FindIndex(x => x.Code == Code);
+            if (c == -1)
+                return NotFound();
+            context.Apartments[c].Rooms = a.Rooms;
+            context.Apartments[c].Meters = a.Meters;
+            context.Apartments[c].City = a.City;
+            context.Apartments[c].Street = a.Street;
+            context.Apartments[c].Num = a.Num;
+            return Ok();
         }
 
         // DELETE api/<ApartmentsController>/5
         [HttpDelete("{id}")]
         public void Delete(int id)
         {
-            count--;
-            var a = Apartments.Find(x => x.Code == id);
-            Apartments.Remove(a);
+            context.countA--;    
+            var a = context.Apartments.Find(x => x.Code == id);
+            context.Apartments.Remove(a);
         }
     }
 }
