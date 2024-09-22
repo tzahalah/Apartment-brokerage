@@ -1,4 +1,9 @@
-﻿using Apartment_brokerage.Entities;
+﻿using Apartment_brokerage.Core.DTO;
+using Apartment_brokerage.Core.Services;
+using Apartment_brokerage.Entities;
+using Apartment_brokerage.Models;
+using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -8,61 +13,66 @@ namespace Apartment_brokerage.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CustomersController : ControllerBase
     {
-        private readonly DataContext context;
-        public CustomersController(DataContext context1)
+        private readonly ICustomersService customersService;
+        private readonly IMapper mapper;
+        public CustomersController(ICustomersService _customersService, IMapper _mapper)
         {
-            context = context1;
+            customersService= _customersService;
+            mapper= _mapper;
         }
 
 
         // GET: api/<CustomersController>
         [HttpGet]
-        public IEnumerable<Customers> Get()
+        public async Task<ActionResult<List<CustomerDto>>> Get()
         {
-            return context.Customers;
+            var cl= await customersService.Get();
+            var cdto= mapper.Map<List<CustomerDto>>(cl);
+            return Ok(cdto);
         }
 
         // GET api/<CustomersController>/5
         [HttpGet("{id}")]
-        public ActionResult<Customers> Get(String id)
+        public async Task<ActionResult<CustomerDto>> Get(int id)
         {
-            var code = context.Customers.FindIndex(x => x.Id ==id);
-            if (code == -1)
-                return NotFound();
-            return context.Customers[code];
+            var c = await customersService.Get(id);
+             var cdto=mapper.Map<CustomerDto>(c);
+            return Ok( cdto);
         }
 
         // POST api/<CustomersController>
         [HttpPost]
-        public void Post([FromBody] Customers c)
+        [AllowAnonymous]
+        public async Task<ActionResult<CustomerDto>> Post([FromBody] CustomerPostModel c)
         {
-            context.countC++;
-            context.Customers.Add(c);
+            var nc=new Customers {Identity= c.Identity,Fname=c.Fname,Lname=c.Lname,Phone=c.Phone};
+            nc= await  customersService.PostAsync(nc);
+            var cdto= mapper.Map<CustomerDto>(nc);
+            return Ok( cdto);
+
         }
 
         // PUT api/<CustomersController>/5
         [HttpPut("{id}")]
-        public ActionResult Put(int id, [FromBody] Customers c)
+        public async Task<ActionResult<CustomerDto>> Put(int id, [FromBody] CustomerPostModel c)
         {
-            var code = context.Customers.FindIndex(x => x.Id == c.Id);
-            if (code == -1)
-                return NotFound();
-            context.Customers[code].Lname = c.Lname;
-            context.Customers[code].Fname = c.Fname;
-            context.Customers[code].Phone = c.Phone;
-            return Ok();
+            var nc = new Customers { Identity = c.Identity, Fname = c.Fname, Lname = c.Lname, Phone = c.Phone };
+             nc=await customersService.PutAsync( id, nc);
+             var cdto = mapper.Map<CustomerDto>(nc);
+             return Ok(cdto);
 
         }
 
         // DELETE api/<CustomersController>/5
         [HttpDelete("{id}")]
-        public void Delete(String id)
+        public async Task<ActionResult<CustomerDto>> Delete(int id)
         {
-            context.countC--;
-            var c = context.Customers.Find(x => x.Id == id);
-            context.Customers.Remove(c);
+          var c= await customersService.DeleteAsync( id);
+          var cdto = mapper.Map<CustomerDto>(c);
+            return Ok( cdto);
         }
     }
 }

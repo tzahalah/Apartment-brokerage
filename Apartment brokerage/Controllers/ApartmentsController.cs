@@ -1,4 +1,11 @@
-﻿using Apartment_brokerage.Entities;
+﻿
+using Apartment_brokerage.Core.DTO;
+using Apartment_brokerage.Core.Services;
+using Apartment_brokerage.Entities;
+using Apartment_brokerage.Models;
+using Apartment_brokerage.Service.Services;
+using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -8,63 +15,70 @@ namespace Apartment_brokerage.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    
     public class ApartmentsController : ControllerBase
     {
-        private readonly DataContext context;
-        public ApartmentsController(DataContext context1)
+        private readonly IApartmentsService apartmentsService;
+        private readonly IMapper mapper;
+        public ApartmentsController(IApartmentsService _apartmentsService, IMapper _mapper)
         {
-            context = context1;
+            this.apartmentsService = _apartmentsService ;
+            this.mapper = _mapper ;
         }
 
 
 
         // GET: api/<ApartmentsController>
         [HttpGet]
-        public IEnumerable<Apartments> Get()
+        public async Task<ActionResult<ApartmentDto>> Get()
         {
-            return context.Apartments;
+            var a= await apartmentsService.Get();
+            if (a != null ) {
+           var adto = mapper.Map<List<ApartmentDto>>(a); 
+            return Ok(adto);}
+            return BadRequest();
         }
 
         // GET api/<ApartmentsController>/5
         [HttpGet("{id}")]
-        public ActionResult<Apartments> Get(int Code)
+        public async Task<ActionResult<ApartmentDto>> Get(int Code)
         {
-            var c = context.Apartments.FindIndex(x => x.Code == Code);
-            if (c ==-1)
-                return NotFound();
-            return context.Apartments[c];
+            var a = await apartmentsService.Get(Code);
+            var adto= mapper.Map<ApartmentDto>(a);
+             return Ok(adto);
         }
 
         // POST api/<ApartmentsController>
         [HttpPost]
-        public void Post([FromBody] Apartments a)
+        public async Task< ActionResult<ApartmentDto>> Post( [FromBody] ApartmentPostModel a)
         {
-
-            context.Apartments.Add(new Apartments { Code = context.countA++, Rooms = a.Rooms, Meters = a.Meters, City = a.City, Street = a.Street, Num = a.Num }) ;
+            var na=new Apartments { Rooms= a.Rooms ,Meters=a.Meters,City=a.City,Street=a.Street,Num=a.Num,SellersId=a.SellersId};
+            na= await apartmentsService.PostAsync(na);
+           var adto= mapper.Map<ApartmentDto>(na);
+            return Ok(adto);
         }
 
         // PUT api/<ApartmentsController>/5
         [HttpPut("{id}")]
-        public ActionResult Put(int Code, [FromBody] Apartments a)
+        public async  Task<ActionResult<ApartmentDto>> Put(int code, [FromBody] ApartmentPostModel a)
         {
-            var c = context.Apartments.FindIndex(x => x.Code == Code);
-            if (c == -1)
-                return NotFound();
-            context.Apartments[c].Rooms = a.Rooms;
-            context.Apartments[c].Meters = a.Meters;
-            context.Apartments[c].City = a.City;
-            context.Apartments[c].Street = a.Street;
-            context.Apartments[c].Num = a.Num;
-            return Ok();
+            var na = new Apartments { Rooms = a.Rooms, Meters = a.Meters, City = a.City, Street = a.Street, Num = a.Num, SellersId=a.SellersId };
+            try
+            {
+                na = await apartmentsService.PutAsync(code, na);
+                var adto = mapper.Map<ApartmentDto>(na);
+                return Ok(adto);
+            }catch(Exception e) { throw new Exception("קוד לא קיים"); }
+
         }
 
         // DELETE api/<ApartmentsController>/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public async Task<ActionResult<ApartmentDto>> Delete(int id)
         {
-            context.countA--;    
-            var a = context.Apartments.Find(x => x.Code == id);
-            context.Apartments.Remove(a);
+            var a= await apartmentsService.DeleteAsync(id);
+            var adto = mapper.Map<ApartmentDto>(a);
+            return Ok(adto);
         }
     }
 }
